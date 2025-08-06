@@ -2,12 +2,13 @@
 import { signup} from './actions'
 import Link from 'next/link';
 
-export default function LoginPage() {
+export default function SignupPage() {
   
   return (
     <div className='min-h-screen flex items-center justify-center'>
       <div className=' rounded-lg border border-gray-300 px-32 py-4'>
         <form className='flex flex-col justify-around gap-4'>
+          <p className='text-center text-xl  text-gray-500 font-bold '>Signup</p>
           <div className='flex justify-end gap-x-2'>
             <label htmlFor="email" className='py-1 text-gray-500 font-bold'>Email:</label>
             <input id="email" name="email" type="email" className='appearance-none py-1 px-4 border-gray-200 rounded border-2 text-gray-700 leading-tight focus:outline-none focus:bg-white focus:border-purple-500' required />
@@ -21,7 +22,7 @@ export default function LoginPage() {
             <input id="password2" name="password2" type="password2" className=' appearance-none py-1 px-4  border-gray-200 rounded border-2 text-gray-700 leading-tight focus:outline-none focus:bg-white focus:border-purple-500'   required />
           </div>
       <button className="shadow bg-purple-500 hover:bg-purple-400 focus:shadow-outline focus:outline-none text-white font-bold py-2 px-4 rounded " formAction={signup}>Log in</button>
-      <Link href='/login' className='text-center text-sm text-gray-800/60 hover:underline'>Have an account?</Link>
+      <Link href='login' className='text-center text-sm text-gray-800/60 hover:underline'>Have an account?</Link>
       </form>
       </div> 
     
