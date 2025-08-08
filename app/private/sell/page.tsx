@@ -2,10 +2,11 @@
 
 import React, { useState } from 'react';
 import Modal from '../purchase/modal';
+import { useToast } from '@/app/context/ToastContext';
 
 export default function SellPage() {
   const [modalData, setModalData] = useState<{ type: string; price: string; date: string } | null>(null);
-
+  const {showToast} = useToast();
   function handleSell(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
@@ -32,6 +33,7 @@ export default function SellPage() {
       }),
     });
     closeModal();
+    showToast('Your ticket is now for sale', { type: 'success' });
   }
 
   const isOpen = modalData !== null;

@@ -4,6 +4,7 @@ import Modal from "../../purchase/modal"
 import { useState, useRef } from "react"
 import { useRouter } from 'next/navigation';
 import {redirect } from 'next/navigation'
+import { useToast } from "@/app/context/ToastContext";
 type Ticket = {
   id: string 
   sale_date: string       // “YYYY-MM-DD”
@@ -32,7 +33,7 @@ export default function RemoveTicketsClient({initialTickets}: TicketsClientProps
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [currentTicket, setTicket] = useState<Ticket|null>(null);
     const router = useRouter();
-    
+    const {showToast} = useToast();
     const timerRef = useRef<NodeJS.Timeout | null>(null);
     const [rowId, setRowId]       = useState<String | null>(null);
 
@@ -116,7 +117,7 @@ export default function RemoveTicketsClient({initialTickets}: TicketsClientProps
                 const reserved = await isTicketReserved(ticket.id)
                 console.log(reserved)
                 if (!reserved) {await openModal(ticket)}
-                else {return}
+                else {showToast('Ticket is reserved', { type: 'error' });}
                 // TODO add pop up to say resrved
         }} className="mt-4 px-2 py-1 bg-red-500 text-white rounded-lg">Delete</button>
           </li>
@@ -139,7 +140,7 @@ export default function RemoveTicketsClient({initialTickets}: TicketsClientProps
                       
                       router.refresh();
                       closeModal();
-
+                      showToast('Removal Succesful', { type: 'success' });
                     }}
                     className="mt-4 px-4 py-2 bg-red-500 text-white rounded-lg"
                   >

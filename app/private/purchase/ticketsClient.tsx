@@ -5,6 +5,7 @@ import TicketCard from './ticket'
 import Modal from './modal'
 import { createClient } from '@/utils/supabase/client'
 import {redirect } from 'next/navigation'
+import { useToast } from '@/app/context/ToastContext'
 
 
 export type Ticket = {
@@ -49,6 +50,7 @@ export default function TicketsClient({initialTickets}: TicketsClientProps) {
     const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
     const timerRef = useRef<NodeJS.Timeout | null>(null);
     const [rowId, setRowId]       = useState<String | null>(null)
+    const { showToast } = useToast();
 
     async function isTicketReserved(ticketId: string): Promise<boolean> {
       const supabase = await createClient();
@@ -134,7 +136,7 @@ export default function TicketsClient({initialTickets}: TicketsClientProps) {
           <li key={t.id}><TicketCard  ticket={t} /><button onClick={async () => {
             const reserved = await isTicketReserved(t.id)
             if (!reserved) {await openModal(t)}
-            else {return }
+            else {showToast('Ticket is reserved', { type: 'error' }); }
             // ADD little error message that ticket is reserved
           }}>Buy</button></li>
         ))}
@@ -174,6 +176,7 @@ export default function TicketsClient({initialTickets}: TicketsClientProps) {
                   }
                   setAllTickets(tickets)
               setIsModalOpen(false);
+              showToast('Purchase successful!', { type: 'success' });
               
             }}
             className="mt-4 px-4 py-2 bg-green-500 text-white rounded-lg"
