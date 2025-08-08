@@ -1,10 +1,11 @@
 'use client'
-import React, { useState, useEffect } from 'react'
+import React, { useState, useRef } from 'react'
 import FilterBar from './filterBar'
 import TicketCard from './ticket'
 import Modal from './modal'
 import { createClient } from '@/utils/supabase/client'
 import {redirect } from 'next/navigation'
+
 
 export type Ticket = {
   id: string
@@ -15,6 +16,9 @@ export type Ticket = {
   inserted_at: string     // timestamptz
   sold: boolean
 }
+
+
+
 
 interface TicketsClientProps {
   initialTickets: Ticket[]
@@ -35,21 +39,78 @@ async function purchaseTicket(ticketId: string) {
   return await res.json();
 }
 
+
+
 export default function TicketsClient({initialTickets}: TicketsClientProps) {
     const [allTickets, setAllTickets] = useState<Ticket[]>(initialTickets)
     const [dateFilter, setDateFilter] = useState<string>('')
     const [typeFilter, setTypeFilter] = useState<Ticket['phase'] | ''>('')
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
-    const supabase = createClient();
+    const timerRef = useRef<NodeJS.Timeout | null>(null);
+    const [rowId, setRowId]       = useState<String | null>(null)
 
-    const openModal = (ticket:Ticket) => {
+    async function isTicketReserved(ticketId: string): Promise<boolean> {
+      const supabase = await createClient();
+      const { data, error } = await supabase.rpc('is_ticket_reserved', {
+      p_ticket_id: ticketId
+      });
+
+      if (error) {
+        console.error('RPC error:', error.message);
+        throw error;
+      }
+
+      // `data` is a boolean indicating existence of a reservation
+      return data as boolean;
+    }
+
+    const openModal =  async (ticket:Ticket) => {
+      const supabase = await createClient();
         setSelectedTicket(ticket);
         setIsModalOpen(true);
+        timerRef.current = setTimeout(() => {
+                closeModal();
+                timerRef.current = null;
+            }, 5 * 60 * 1000);
+        // add reservation supabase
+        let {data: {user}, error: authError} = await supabase.auth.getUser();
+        if (authError) {
+            redirect('/login')
+        }
+        const { data, error } = await supabase
+        .from('ticket_reservations')
+        .insert({ ticket_id: ticket.id, user_id: user?.id })
+        .select('id')
+        .single();
+        
+        
+        if (error) {
+          console.log(error);
+        }
+
+        setRowId(data?.id);
     };
-    const closeModal = () => {
+    const closeModal = async () => {
+        const supabase = await createClient();
         setSelectedTicket(null);
         setIsModalOpen(false);
+        if (timerRef.current) {
+            clearTimeout(timerRef.current);
+            timerRef.current = null;
+        }
+        if (rowId) {
+          
+          const { error: deleteError } = await supabase
+          .from('ticket_reservations')
+          .delete()
+          .eq('id', rowId);
+          setRowId(null);
+          if (deleteError) {
+            console.log(deleteError);
+          }
+        }
+        // remove reservation supabase
     };
     const visible = allTickets
     .filter(t => !dateFilter   || t.sale_date === dateFilter)
@@ -57,7 +118,7 @@ export default function TicketsClient({initialTickets}: TicketsClientProps) {
 
     return (
     <div className="p-4">
-      {/* your sticky header from before */}
+      
       <header className="sticky top-0 bg-white z-10 p-4 flex flex-col md:flex-row items-center gap-4 border-b">
         <FilterBar
           dateFilter={dateFilter}
@@ -70,12 +131,17 @@ export default function TicketsClient({initialTickets}: TicketsClientProps) {
       <main className="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <ol>
             {visible.map(t => (
-          <li key={t.id}><TicketCard  ticket={t} /><button onClick={() => openModal(t)}>Buy</button></li>
+          <li key={t.id}><TicketCard  ticket={t} /><button onClick={async () => {
+            const reserved = await isTicketReserved(t.id)
+            if (!reserved) {await openModal(t)}
+            else {return }
+            // ADD little error message that ticket is reserved
+          }}>Buy</button></li>
         ))}
         </ol>
             <Modal
       open={isModalOpen}
-      onClose={() => setIsModalOpen(false)}
+      onClose={async () => await closeModal()}
     >
       {selectedTicket && (
         <div>
@@ -88,9 +154,10 @@ export default function TicketsClient({initialTickets}: TicketsClientProps) {
           </p>
           <button
             onClick={async () => {
+              const supabase = await createClient();
               /* your purchase logic */
               await purchaseTicket(selectedTicket.id)
-              const supabase = await createClient();
+              
                   let {data: {user}, error: authError} = await supabase.auth.getUser();
                   if (authError) {
                       redirect('/login')

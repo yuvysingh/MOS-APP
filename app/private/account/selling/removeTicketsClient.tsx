@@ -1,8 +1,9 @@
 'use client'
 import { createClient } from "@/utils/supabase/client"
 import Modal from "../../purchase/modal"
-import { useState } from "react"
+import { useState, useRef } from "react"
 import { useRouter } from 'next/navigation';
+import {redirect } from 'next/navigation'
 type Ticket = {
   id: string 
   sale_date: string       // “YYYY-MM-DD”
@@ -32,14 +33,75 @@ export default function RemoveTicketsClient({initialTickets}: TicketsClientProps
     const [currentTicket, setTicket] = useState<Ticket|null>(null);
     const router = useRouter();
     
+    const timerRef = useRef<NodeJS.Timeout | null>(null);
+    const [rowId, setRowId]       = useState<String | null>(null);
+
+
+    async function isTicketReserved(ticketId: string): Promise<boolean> {
+      const supabase = await createClient();
+      const { data, error } = await supabase.rpc('is_ticket_reserved', {
+      p_ticket_id: ticketId
+      });
+
+      if (error) {
+        console.error('RPC error:', error.message);
+        throw error;
+      }
+
+      // `data` is a boolean indicating existence of a reservation
+      return data as boolean;
+    }
+
     
-    const openModal = (ticket:Ticket) => {
+    
+    const openModal = async (ticket:Ticket) => {
+            const supabase = await createClient();
             setTicket(ticket);
             setIsModalOpen(true);
+            
+            timerRef.current = setTimeout(() => {
+                closeModal();
+                timerRef.current = null;
+            }, 5 * 60 * 1000);
+            // start a timer
+            // add reservation in supabase
+            let {data: {user}, error: authError} = await supabase.auth.getUser();
+            if (authError) {
+                redirect('/login')
+            }
+            const { data, error } = await supabase
+            .from('ticket_reservations')
+            .insert({ ticket_id: ticket.id, user_id: user?.id })
+            .select('id')
+            .single();
+            if (error) {
+                console.log(error);
+            }
+            setRowId(data?.id);
+
         };
-    const closeModal = () => {
+
+    const closeModal = async () => {
+        const supabase = await createClient();
         setTicket(null);
         setIsModalOpen(false);
+        if (timerRef.current) {
+            clearTimeout(timerRef.current);
+            timerRef.current = null;
+        }
+        if (rowId) {
+          const { error: deleteError } = await supabase
+          .from('ticket_reservations')
+          .delete()
+          .eq('id', rowId);
+          setRowId(null);
+          if (deleteError) {
+            console.log(deleteError);
+          }
+        }
+        
+        
+        // remove reservation in supabase
     };
 
     return <div className="p-4">
@@ -50,7 +112,13 @@ export default function RemoveTicketsClient({initialTickets}: TicketsClientProps
             <p><strong>Type:</strong> {ticket.phase}</p>
             <p><strong>Price:</strong> ${ticket.sell_price}</p>
             <p><strong>Date:</strong> {ticket.sale_date}</p>
-            <button onClick={() => openModal(ticket)} className="mt-4 px-2 py-1 bg-red-500 text-white rounded-lg">Delete</button>
+            <button onClick={async () => {
+                const reserved = await isTicketReserved(ticket.id)
+                console.log(reserved)
+                if (!reserved) {await openModal(ticket)}
+                else {return}
+                // TODO add pop up to say resrved
+        }} className="mt-4 px-2 py-1 bg-red-500 text-white rounded-lg">Delete</button>
           </li>
         ))}
       </ul>
