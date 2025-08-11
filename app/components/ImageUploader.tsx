@@ -47,17 +47,19 @@ export default function TicketUploader({ userId }: { userId: string }) {
 
         setLoading(true);
 
-        //const form = new FormData();
-        //form.append("file", file);
-        //const res = await fetch("/api/vision-validate", { method: "POST", body: form });
-        //const data: ParsedTicket = await res.json();
-        const data: ParsedTicket = {
-  ok: true,
-  event_day: "2025-08-22",   // ISO "YYYY-MM-DD"
-  price: 45.0,
-  ticket_type: "early",
-  barcode_exists: true,
-};
+        const form = new FormData();
+        form.append("file", file);
+        const res = await fetch("/api/vision-validate", { method: "POST", body: form });
+        const data2 = await res.json()
+        console.log(data2)
+        const data = {
+            ok: data2.ok,
+            event_day: data2.parsedTicket.event_day,
+            price:data2.parsedTicket.face_value,
+            ticket_type: data2.parsedTicket.entry_by,
+            barcode_exists: data2.barcode_exists
+        }
+        
 
         setLoading(false);
 
