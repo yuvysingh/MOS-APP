@@ -54,9 +54,9 @@ export default function TicketUploader({ userId }: { userId: string }) {
         console.log(data2)
         const data = {
             ok: data2.ok,
-            event_day: data2.parsedTicket.event_day,
-            price:data2.parsedTicket.face_value,
-            ticket_type: data2.parsedTicket.entry_by,
+            event_day: data2.event_day,
+            price:data2.face_value,
+            ticket_type: data2.entry_by,
             barcode_exists: data2.barcode_exists
         }
         
