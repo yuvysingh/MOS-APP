@@ -1,9 +1,10 @@
 'use client'
 import { useState, useRef } from "react";
 import { createClient } from "@/utils/supabase/client";
-import { useToast } from '@/app/context/ToastContext'
+import { useToast } from '@/app/hooks/ToastContext'
 import Modal from "../private/purchase/modal";
 
+import { useSubmitWithStripe} from '@/app/hooks/useSumbitWithStripe'
 
 type ParsedTicket = {
   ok: boolean;
@@ -30,6 +31,7 @@ export default function TicketUploader({ userId }: { userId: string }) {
     const ticketIdRef = useRef<string | null>(null); // stores the ticket id for storing in supabase
     const { showToast } = useToast();
     const [isModalOpen, setModalOpen] = useState(false);
+    const { onSubmit, redirecting } = useSubmitWithStripe({openConfirmModal:() => setModalOpen(true)})
 
     //TODO: api
     const onPick = async (e:React.ChangeEvent<HTMLInputElement>) => {
@@ -145,8 +147,9 @@ export default function TicketUploader({ userId }: { userId: string }) {
           <div className="flex flex-col gap-2">
             {loading && <span>Checking…</span>}
             <div className="flex gap-2">
-              <button onClick={remove}>Remove</button>
-              <button onClick={() => setModalOpen(true)}>Submit</button>
+              <button onClick={remove} disabled={redirecting}>Remove</button>
+              <button onClick={onSubmit} >{redirecting ? 'Taking you to Stripe…' : 'Submit'}</button>
+              
             </div>
           </div>
         </div>

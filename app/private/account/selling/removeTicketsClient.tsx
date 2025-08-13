@@ -4,7 +4,7 @@ import Modal from "../../purchase/modal"
 import { useState, useRef } from "react"
 import { useRouter } from 'next/navigation';
 import {redirect } from 'next/navigation'
-import { useToast } from "@/app/context/ToastContext";
+import { useToast } from "@/app/hooks/ToastContext";
 type Ticket = {
   id: string 
   sale_date: string       // “YYYY-MM-DD”

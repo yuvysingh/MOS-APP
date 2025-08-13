@@ -5,7 +5,7 @@ import TicketCard from './ticket'
 import Modal from './modal'
 import { createClient } from '@/utils/supabase/client'
 import {redirect } from 'next/navigation'
-import { useToast } from '@/app/context/ToastContext'
+import { useToast } from '@/app/hooks/ToastContext'
 
 
 export type Ticket = {

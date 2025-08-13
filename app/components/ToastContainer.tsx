@@ -1,7 +1,7 @@
 // /components/ToastContainer.tsx
 'use client';
 
-import { Toast } from '../context/ToastContext';
+import { Toast } from '../hooks/ToastContext';
 
 export default function ToastContainer({
   toasts,

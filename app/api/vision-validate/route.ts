@@ -64,7 +64,9 @@ export async function POST(req: Request) {
             
   let barcode_exists = true;
   
-  
+  if (!face_value || !event ||!event_day ||!ticket_type ||!entry_by) {
+    return Response.json({ ok: false, error: "incorrect file" }, { status: 400 })
+  }
 
   return Response.json({
     ok: true,
