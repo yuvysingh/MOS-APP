@@ -48,7 +48,6 @@ export async function POST(req: Request) {
   // Fallbacks: if Form Parser didn’t emit a KV, you can still parse from full text.
   const face_value = money(faceValRaw) ?? money(afterLabel(text, /face\s*value/i));
   const event_day  = dateFrom(startsVal) ?? dateFrom(near(text, "Starts"));
-  const end_time   = timeFrom(endsVal)   ?? timeFrom(near(text, "Ends"));
   const location   = locationVal ?? afterLabel(text, /^location$/i) ?? null;
   const event      = eventVal ?? afterLabel(text, /^event$/i) ?? null;
 
@@ -62,7 +61,7 @@ export async function POST(req: Request) {
 
   
             
-  let barcode_exists = true;
+  const barcode_exists = true;
   
   if (!face_value || !event ||!event_day ||!ticket_type ||!entry_by) {
     return Response.json({ ok: false, error: "incorrect file" }, { status: 400 })
